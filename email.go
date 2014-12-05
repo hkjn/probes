@@ -3,8 +3,8 @@
 // This package defines some helpers to send alert emails, while
 // actual probes are defined in subpackages.
 //
-// To send alert emails, the following configuration is required at
-// minimum:
+// To send alert emails, at minimum the following configuration is
+// required:
 //   - Config.SendGrid: sendgrid credentials
 //   - Config.Alert.Recipient: who receives the emails
 package probes // import "hkjn.me/probes"
@@ -24,7 +24,8 @@ var Config = EmailConfig{TemplateName: "email"}
 
 // EmailConfig describes the structure of the email configuration.
 type EmailConfig struct {
-	// Template for HTML email. See EmailData for what's passed to the template.
+	// Template for HTML email. See EmailData for what's passed to the
+	// template when an alert email is generated.
 	Template     string
 	TemplateName string // name of the template
 	Alert        struct {
@@ -58,7 +59,7 @@ func getClient() (*sendgrid.SGClient, error) {
 
 // SendAlertEmail sends an alert email using SendGrid.
 //
-// This is provided to simplify Alert() prober.Probe implementations.
+// This is provided to simplify prober.Probe implementations for Alert().
 func SendAlertEmail(name, desc string, badness int, records prober.Records) error {
 	glog.V(1).Infof("sending alert email..\n")
 
