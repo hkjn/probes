@@ -2,6 +2,11 @@
 //
 // This package defines some helpers to send alert emails, while
 // actual probes are defined in subpackages.
+//
+// To send alert emails, the following configuration is required at
+// minimum:
+//   - Config.SendGrid: sendgrid credentials
+//   - Config.Alert.Recipient: who receives the emails
 package probes // import "hkjn.me/probes"
 
 import (
@@ -14,19 +19,30 @@ import (
 	"hkjn.me/prober"
 )
 
-type ConfigT struct {
-	Template *template.Template
-	Alert    struct {
-		// From:, To: addresses for alert emails.
-		Sender, Recipient string
-		CCs               []string
+// Config is the email configuration.
+var Config = EmailConfig{TemplateName: "email"}
+
+// EmailConfig describes the structure of the email configuration.
+type EmailConfig struct {
+	// Template for HTML email. See EmailData for what's passed to the template.
+	Template     string
+	TemplateName string // name of the template
+	Alert        struct {
+		Sender    string   // From: address
+		Recipient string   // To: address
+		CCs       []string // CC: addresses
 	}
 	Sendgrid struct {
-		User, Password string
+		User, Password string // sendgrid credentials
 	}
 }
 
-var Config = ConfigT{}
+// EmailData describes the data available in EmailConfig.Template.
+type EmailData struct {
+	Name, Desc string
+	Badness    int
+	Records    prober.Records
+}
 
 func getClient() (*sendgrid.SGClient, error) {
 	user := Config.Sendgrid.User
@@ -40,17 +56,32 @@ func getClient() (*sendgrid.SGClient, error) {
 	return sendgrid.NewSendGridClient(user, pw), nil
 }
 
-// SendAlertEmail sends an alert email.
+// SendAlertEmail sends an alert email using SendGrid.
+//
+// This is provided to simplify Alert() prober.Probe implementations.
 func SendAlertEmail(name, desc string, badness int, records prober.Records) error {
 	glog.V(1).Infof("sending alert email..\n")
-	data := struct {
-		Name, Desc string
-		Badness    int
-		Records    prober.Records
-	}{name, desc, badness, records}
+
+	var t *template.Template
+	var err error
+	if Config.Alert.Recipient == "" {
+		err = fmt.Errorf("missing email recipient - set Config.Alert.Recipient")
+	}
+	// TODO: would be nice to only parse the template once, but little
+	// complicated without complicating config for user, since this will
+	// be called from separate goroutines..
+	t, err = template.New(Config.TemplateName).Parse(Config.Template)
+	if err != nil {
+		err = fmt.Errorf("failed to parse email: %v", err)
+	}
+	if err != nil {
+		return err
+	}
 
 	var html bytes.Buffer
-	err := Config.Template.ExecuteTemplate(&html, "email", data)
+	data := EmailData{name, desc, badness, records}
+	err = t.ExecuteTemplate(
+		&html, Config.TemplateName, data)
 	if err != nil {
 		return fmt.Errorf("failed to construct email from template: %v", err)
 	}
