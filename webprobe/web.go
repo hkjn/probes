@@ -19,10 +19,12 @@ var (
 
 // WebProber probes a target's HTTP response.
 type WebProber struct {
-	Target, Method, Name string
-	Body                 io.Reader
-	wantCode             int
-	wantInResponse       string
+	Target         string // URL to probe
+	Method         string // GET, POST, PUT, etc.
+	Name           string // name of the prober
+	Body           io.Reader
+	wantCode       int
+	wantInResponse string
 }
 
 // Name sets the name for the prober.

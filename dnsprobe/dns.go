@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"sort"
+	"time"
 
 	"github.com/golang/glog"
 
@@ -14,7 +15,7 @@ import (
 
 // DnsProber probes a target host's DNS records.
 type DnsProber struct {
-	Target    string
+	Target    string // host to probe
 	wantMX    mxRecords
 	wantA     []string
 	wantNS    nsRecords
@@ -69,7 +70,8 @@ func New(target string, options ...func(*DnsProber)) *prober.Probe {
 	for _, opt := range options {
 		opt(p)
 	}
-	return prober.NewProbe(p, "DnsProber", fmt.Sprintf("Probes DNS records of %s", target))
+	return prober.NewProbe(p, "DnsProber", fmt.Sprintf("Probes DNS records of %s", target),
+		prober.Interval(time.Minute*5), prober.FailurePenalty(5))
 }
 
 // Probe verifies that the target's DNS records are as expected.
