@@ -7,7 +7,7 @@
 // required:
 //   - Config.SendGrid: sendgrid credentials
 //   - Config.Alert.Recipient: who receives the emails
-package probes
+package probes // import "hkjn.me/probes"
 
 import (
 	"bytes"
