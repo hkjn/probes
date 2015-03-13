@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/golang/glog"
@@ -155,7 +156,7 @@ func (p *DnsProber) checkMX() error {
 	}
 	sort.Sort(mxRec)
 	for i, r := range mxRec {
-		if p.wantMX[i].Host != r.Host {
+		if !strings.EqualFold(p.wantMX[i].Host, r.Host) {
 			return fmt.Errorf("bad host %q for MX record #%d; want %q", r.Host, i, p.wantMX[i].Host)
 		}
 		if p.wantMX[i].Pref != r.Pref {
