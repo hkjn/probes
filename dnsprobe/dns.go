@@ -71,7 +71,8 @@ func New(target string, options ...func(*DnsProber)) *prober.Probe {
 	for _, opt := range options {
 		opt(p)
 	}
-	return prober.NewProbe(p, "DnsProber", fmt.Sprintf("Probes DNS records of %s", target),
+	return prober.NewProbe(p, fmt.Sprintf("DnsProber_%s", target),
+		fmt.Sprintf("Probes DNS records of %s", target),
 		prober.Interval(time.Minute*5), prober.FailurePenalty(5))
 }
 
