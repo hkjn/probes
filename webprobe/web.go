@@ -71,8 +71,8 @@ func (p WebProber) Probe() error {
 		return fmt.Errorf("failed to send HTTP request: %v", err)
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("non-success HTTP response: %q", resp.Status)
+	if resp.StatusCode != p.wantCode {
+		return fmt.Errorf("bad HTTP response status; want %d, got %d", p.wantCode, resp.StatusCode)
 	}
 	body, err := ioutil.ReadAll(io.LimitReader(resp.Body, MaxResponse))
 	if err != nil {
