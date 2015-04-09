@@ -65,12 +65,13 @@ func (p WebProber) Probe() error {
 		return fmt.Errorf("failed to create HTTP request: %v", err)
 	}
 
-	c := http.Client{}
-	resp, err := c.Do(req)
+	t := http.Transport{}
+	resp, err := t.RoundTrip(req)
 	if err != nil {
 		return fmt.Errorf("failed to send HTTP request: %v", err)
 	}
 	defer resp.Body.Close()
+
 	if resp.StatusCode != p.wantCode {
 		return fmt.Errorf("bad HTTP response status; want %d, got %d", p.wantCode, resp.StatusCode)
 	}
