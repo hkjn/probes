@@ -50,40 +50,49 @@ func InResponse(str string) func(*WebProber) {
 
 // New returns a new instance of the web probe with specified options.
 func New(target, method string, code int, options ...func(*WebProber)) *prober.Probe {
+	return NewWithGeneric(target, method, code, prober.Options{}, options...)
+}
+
+// NewWithGeneric returns a new instance of the web probe with specified options.
+//
+// NewWithGeneric passes through specified prober.Options, after
+// applying the webprobe-specific options.
+func NewWithGeneric(target, method string, code int, genericOpts prober.Options, options ...func(*WebProber)) *prober.Probe {
 	name := defaultName
 	p := &WebProber{Target: target, Name: name, Method: method, wantCode: code}
 	for _, opt := range options {
 		opt(p)
 	}
-	return prober.NewProbe(p, p.Name, fmt.Sprintf("Probes HTTP response of %s", target))
+	return prober.NewProbe(p, p.Name, fmt.Sprintf("Probes HTTP response of %s", target), genericOpts...)
 }
 
 // Probe verifies that the target's HTTP response is as expected.
-func (p WebProber) Probe() error {
+func (p WebProber) Probe() prober.Result {
 	req, err := http.NewRequest(p.Method, p.Target, p.Body)
 	if err != nil {
-		return fmt.Errorf("failed to create HTTP request: %v", err)
+		//		return prober.Result{prober.Fail, fmt.Errorf("failed to create HTTP request: %v", err)}
+		return prober.FailedWith(fmt.Errorf("failed to create HTTP request: %v", err))
 	}
 
 	t := http.Transport{}
 	resp, err := t.RoundTrip(req)
 	if err != nil {
-		return fmt.Errorf("failed to send HTTP request: %v", err)
+		return prober.FailedWith(fmt.Errorf("failed to send HTTP request: %v", err))
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != p.wantCode {
-		return fmt.Errorf("bad HTTP response status; want %d, got %d", p.wantCode, resp.StatusCode)
+		return prober.FailedWith(fmt.Errorf("bad HTTP response status; want %d, got %d", p.wantCode, resp.StatusCode))
 	}
 	body, err := ioutil.ReadAll(io.LimitReader(resp.Body, MaxResponse))
 	if err != nil {
-		return fmt.Errorf("failed to read HTTP response: %v", err)
+		return prober.FailedWith(fmt.Errorf("failed to read HTTP response: %v", err))
 	}
 	sb := string(body)
 	if !strings.Contains(sb, p.wantInResponse) {
-		return fmt.Errorf("response doesn't contain %q: \n%v\n", p.wantInResponse, sb)
+		return prober.FailedWith(fmt.Errorf("response doesn't contain %q: \n%v\n", p.wantInResponse, sb))
 	}
-	return nil
+	return prober.Passed()
 }
 
 // Alert sends an alert notification via email.

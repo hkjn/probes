@@ -24,6 +24,25 @@ type DnsProber struct {
 	wantTXT   []string
 }
 
+// New returns a new instance of the DNS probe with specified options.
+func New(target string, options ...func(*DnsProber)) *prober.Probe {
+	return NewWithGeneric(target, prober.Options{}, options...)
+}
+
+// NewWithGeneric returns a new instance of the DNS probe with specified options.
+//
+// NewWithGeneric passes through specified prober.Options, after
+// applying the dnsprobe-specific options.
+func NewWithGeneric(target string, genericOpts prober.Options, options ...func(*DnsProber)) *prober.Probe {
+	p := &DnsProber{Target: target}
+	for _, opt := range options {
+		opt(p)
+	}
+	return prober.NewProbe(p, fmt.Sprintf("DnsProber_%s", target),
+		fmt.Sprintf("Probes DNS records of %s", target),
+		append(genericOpts, prober.Interval(time.Minute*5), prober.FailurePenalty(5))...)
+}
+
 // MX applies the option that the prober wants specific MX records.
 func MX(mx []*net.MX) func(*DnsProber) {
 	return func(p *DnsProber) {
@@ -65,61 +84,51 @@ func TXT(txt []string) func(*DnsProber) {
 	}
 }
 
-// New returns a new instance of the DNS probe with specified options.
-func New(target string, options ...func(*DnsProber)) *prober.Probe {
-	p := &DnsProber{Target: target}
-	for _, opt := range options {
-		opt(p)
-	}
-	return prober.NewProbe(p, fmt.Sprintf("DnsProber_%s", target),
-		fmt.Sprintf("Probes DNS records of %s", target),
-		prober.Interval(time.Minute*5), prober.FailurePenalty(5))
-}
-
 // Probe verifies that the target's DNS records are as expected.
-func (p *DnsProber) Probe() error {
+func (p *DnsProber) Probe() prober.Result {
 	if len(p.wantMX) > 0 {
 		glog.V(1).Infof("Checking %d MX records..\n", len(p.wantMX))
 		err := p.checkMX()
 		if err != nil {
-			return err
+			return prober.FailedWith(err)
 		}
 	}
 	if len(p.wantA) > 0 {
 		glog.V(1).Infof("Checking %d A records..\n", len(p.wantA))
 		err := p.checkA()
 		if err != nil {
-			return err
+			return prober.FailedWith(err)
 		}
 	}
 	if len(p.wantNS) > 0 {
 		glog.V(1).Infof("Checking %d NS records..\n", len(p.wantNS))
 		err := p.checkNS()
 		if err != nil {
-			return err
+			return prober.FailedWith(err)
 		}
 	}
 	if p.wantCNAME != "" {
 		glog.V(1).Infof("Checking CNAME record..\n")
 		err := p.checkCNAME()
 		if err != nil {
-			return err
+			return prober.FailedWith(err)
 		}
 	}
 	if len(p.wantTXT) > 0 {
 		glog.V(1).Infof("Checking %d TXT records..\n", len(p.wantTXT))
 		err := p.checkTXT()
 		if err != nil {
-			return err
+			return prober.FailedWith(err)
 		}
 	}
-	return nil
+	return prober.Passed()
 }
 
 // mxRecords is a collection of MX records, implementing sort.Interface.
 //
 // We need this custom order since the sort order in net.LookupMX
-// randomizes records with the same preference value.
+// randomizes records with the same preference value, but we'd like a stable
+// ordering so we can compared expected vs actual records.
 type mxRecords []*net.MX
 
 func (r mxRecords) Len() int { return len(r) }
