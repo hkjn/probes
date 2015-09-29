@@ -26,14 +26,14 @@ type DnsProber struct {
 
 // New returns a new instance of the DNS probe with specified options.
 func New(target string, options ...func(*DnsProber)) *prober.Probe {
-	return NewWithGeneric(target, prober.Options{}, options...)
+	return NewWithGeneric(target, []prober.Option{}, options...)
 }
 
 // NewWithGeneric returns a new instance of the DNS probe with specified options.
 //
 // NewWithGeneric passes through specified prober.Options, after
 // applying the dnsprobe-specific options.
-func NewWithGeneric(target string, genericOpts prober.Options, options ...func(*DnsProber)) *prober.Probe {
+func NewWithGeneric(target string, genericOpts []prober.Option, options ...func(*DnsProber)) *prober.Probe {
 	p := &DnsProber{Target: target}
 	for _, opt := range options {
 		opt(p)

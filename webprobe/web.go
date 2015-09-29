@@ -50,14 +50,14 @@ func InResponse(str string) func(*WebProber) {
 
 // New returns a new instance of the web probe with specified options.
 func New(target, method string, code int, options ...func(*WebProber)) *prober.Probe {
-	return NewWithGeneric(target, method, code, prober.Options{}, options...)
+	return NewWithGeneric(target, method, code, []prober.Option{}, options...)
 }
 
 // NewWithGeneric returns a new instance of the web probe with specified options.
 //
 // NewWithGeneric passes through specified prober.Options, after
 // applying the webprobe-specific options.
-func NewWithGeneric(target, method string, code int, genericOpts prober.Options, options ...func(*WebProber)) *prober.Probe {
+func NewWithGeneric(target, method string, code int, genericOpts []prober.Option, options ...func(*WebProber)) *prober.Probe {
 	name := defaultName
 	p := &WebProber{Target: target, Name: name, Method: method, wantCode: code}
 	for _, opt := range options {
