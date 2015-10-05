@@ -1,0 +1,18 @@
+[submodule "vendor/github.com/golang/glog"]
+	path = vendor/github.com/golang/glog
+	url = https://github.com/golang/glog.git
+[submodule "vendor/github.com/sendgrid/sendgrid-go"]
+	path = vendor/github.com/sendgrid/sendgrid-go
+	url = https://github.com/sendgrid/sendgrid-go.git
+[submodule "vendor/hkjn.me/prober"]
+	path = vendor/hkjn.me/prober
+	url = https://github.com/hkjn/prober.git
+[submodule "vendor/github.com/sendgrid/smtpapi-go"]
+	path = vendor/github.com/sendgrid/smtpapi-go
+	url = https://github.com/sendgrid/smtpapi-go.git
+[submodule "vendor/gopkg.in/yaml.v2"]
+	path = vendor/gopkg.in/yaml.v2
+	url = https://github.com/go-yaml/yaml.git
+[submodule "vendor/hkjn.me/timeutils"]
+	path = vendor/hkjn.me/timeutils
+	url = https://github.com/hkjn/timeutils.git

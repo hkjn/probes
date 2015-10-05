@@ -1,0 +1,12 @@
+package: main
+import:
+  - package: github.com/golang/glog
+  - package: github.com/sendgrid/sendgrid-go
+  - package: github.com/sendgrid/smtpapi-go
+  - package: gopkg.in/yaml.v2
+  - package: hkjn.me/prober
+    vcs: git
+    repo: git@github.com:hkjn/prober.git
+  - package: hkjn.me/timeutils
+    vcs: git
+    repo: git@github.com:hkjn/timeutils.git
