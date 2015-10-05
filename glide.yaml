@@ -1,4 +1,4 @@
-package: main
+package: hkjn.me/probes
 import:
   - package: github.com/golang/glog
   - package: github.com/sendgrid/sendgrid-go
