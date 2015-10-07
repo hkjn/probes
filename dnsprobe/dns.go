@@ -183,7 +183,7 @@ func (p *DnsProber) checkA() error {
 		return fmt.Errorf("failed to look up A records for %s: %v", p.Target, err)
 	}
 	if len(addr) != len(p.wantA) {
-		return fmt.Errorf("got %d A records, want %d", len(addr), len(p.wantA))
+		return fmt.Errorf("got %d A records, want %d: %v", len(addr), len(p.wantA), addr)
 	}
 	sort.Strings(addr)
 	for i, a := range addr {
