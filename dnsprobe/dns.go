@@ -16,12 +16,13 @@ import (
 
 // DnsProber probes a target host's DNS records.
 type DnsProber struct {
-	Target    string // host to probe
-	wantMX    mxRecords
-	wantA     []string
-	wantNS    nsRecords
-	wantCNAME string
-	wantTXT   []string
+	Target     string // host to probe
+	name, desc string // name and description of the prober
+	wantMX     mxRecords
+	wantA      []string
+	wantNS     nsRecords
+	wantCNAME  string
+	wantTXT    []string
 }
 
 // New returns a new instance of the DNS probe with specified options.
@@ -38,9 +39,30 @@ func NewWithGeneric(target string, genericOpts []prober.Option, options ...func(
 	for _, opt := range options {
 		opt(p)
 	}
-	return prober.NewProbe(p, fmt.Sprintf("DnsProber_%s", target),
-		fmt.Sprintf("Probes DNS records of %s", target),
+	// Set a default name if none was specified.
+	if p.name == "" {
+		p.name = fmt.Sprintf("DnsProber_%s", target)
+	}
+	// Set a default desc if none was specified.
+	if p.desc == "" {
+		p.desc = fmt.Sprintf("Probes DNS records of %s", target)
+	}
+	return prober.NewProbe(p, p.name, p.desc,
 		append(genericOpts, prober.Interval(time.Minute*5), prober.FailurePenalty(5))...)
+}
+
+// Name sets specified name.
+func Name(name string) func(*DnsProber) {
+	return func(p *DnsProber) {
+		p.name = name
+	}
+}
+
+// Desc sets specified description.
+func Desc(desc string) func(*DnsProber) {
+	return func(p *DnsProber) {
+		p.desc = desc
+	}
 }
 
 // MX applies the option that the prober wants specific MX records.
