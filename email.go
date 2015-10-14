@@ -3,6 +3,10 @@
 // This package defines some helpers to send alert emails, while
 // actual probes are defined in subpackages.
 //
+// It uses sendgrid.com to send emails, which seems quite reliable,
+// cheap and easy to use. You need an account with sengrid.com with
+// user/password to use this package.
+//
 // To send alert emails, at minimum the following configuration is
 // required:
 //   - Config.SendGrid: sendgrid credentials
