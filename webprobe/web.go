@@ -70,7 +70,6 @@ func NewWithGeneric(target, method string, code int, genericOpts []prober.Option
 func (p WebProber) Probe() prober.Result {
 	req, err := http.NewRequest(p.Method, p.Target, p.Body)
 	if err != nil {
-		//		return prober.Result{prober.Fail, fmt.Errorf("failed to create HTTP request: %v", err)}
 		return prober.FailedWith(fmt.Errorf("failed to create HTTP request: %v", err))
 	}
 
