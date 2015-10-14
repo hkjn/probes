@@ -72,7 +72,10 @@ func (p WebProber) Probe() prober.Result {
 	if err != nil {
 		return prober.FailedWith(fmt.Errorf("failed to create HTTP request: %v", err))
 	}
-
+	// Inform the server that we'd like the connection to be closed once
+	// we're done:
+	// http://craigwickesser.com/2015/01/golang-http-to-many-open-files/
+	req.Header.Set("Connection", "close")
 	t := http.Transport{}
 	resp, err := t.RoundTrip(req)
 	if err != nil {
