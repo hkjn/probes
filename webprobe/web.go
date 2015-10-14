@@ -12,9 +12,9 @@ import (
 	"hkjn.me/probes"
 )
 
-var (
-	MaxResponse int64 = 1000000 // largest response size accepted
-	defaultName       = "WebProber"
+const (
+	MaxResponseBytes int64 = 10e5 // largest response size accepted
+	defaultName            = "WebProber"
 )
 
 // WebProber probes a target's HTTP response.
@@ -83,7 +83,7 @@ func (p WebProber) Probe() prober.Result {
 	if resp.StatusCode != p.wantCode {
 		return prober.FailedWith(fmt.Errorf("bad HTTP response status; want %d, got %d", p.wantCode, resp.StatusCode))
 	}
-	body, err := ioutil.ReadAll(io.LimitReader(resp.Body, MaxResponse))
+	body, err := ioutil.ReadAll(io.LimitReader(resp.Body, MaxResponseBytes))
 	if err != nil {
 		return prober.FailedWith(fmt.Errorf("failed to read HTTP response: %v", err))
 	}
