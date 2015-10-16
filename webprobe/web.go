@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"strings"
 
-	"hkjn.me/prober"
-	"hkjn.me/probes"
+	"github.com/hkjn/prober"
+	"github.com/hkjn/probes"
 )
 
 const (

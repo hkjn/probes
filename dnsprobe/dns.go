@@ -10,8 +10,8 @@ import (
 
 	"github.com/golang/glog"
 
-	"hkjn.me/prober"
-	"hkjn.me/probes"
+	"github.com/hkjn/prober"
+	"github.com/hkjn/probes"
 )
 
 // DnsProber probes a target host's DNS records.
