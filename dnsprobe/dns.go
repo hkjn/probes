@@ -1,5 +1,5 @@
 // Package dnsprobe implements a DNS probe.
-package dnsprobe // import "hkjn.me/probes/dnsprobe"
+package dnsprobe
 
 import (
 	"fmt"
