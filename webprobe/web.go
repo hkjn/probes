@@ -25,6 +25,7 @@ type WebProber struct {
 	Body           io.Reader
 	wantCode       int
 	wantInResponse string
+	wantHeaders    map[string]string
 }
 
 // Name sets the name for the prober.
@@ -48,6 +49,13 @@ func InResponse(str string) func(*WebProber) {
 	}
 }
 
+// ResponseHeaders adds expected header names and values for the response.
+func ResponseHeaders(headers map[string]string) func(*WebProber) {
+	return func(p *WebProber) {
+		p.wantHeaders = headers
+	}
+}
+
 // New returns a new instance of the web probe with specified options.
 func New(target, method string, code int, options ...func(*WebProber)) *prober.Probe {
 	return NewWithGeneric(target, method, code, []prober.Option{}, options...)
@@ -59,7 +67,13 @@ func New(target, method string, code int, options ...func(*WebProber)) *prober.P
 // applying the webprobe-specific options.
 func NewWithGeneric(target, method string, code int, genericOpts []prober.Option, options ...func(*WebProber)) *prober.Probe {
 	name := defaultName
-	p := &WebProber{Target: target, Name: name, Method: method, wantCode: code}
+	p := &WebProber{
+		Target:      target,
+		Name:        name,
+		Method:      method,
+		wantCode:    code,
+		wantHeaders: make(map[string]string),
+	}
 	for _, opt := range options {
 		opt(p)
 	}
@@ -82,6 +96,13 @@ func (p WebProber) Probe() prober.Result {
 		return prober.FailedWith(fmt.Errorf("failed to send HTTP request: %v", err))
 	}
 	defer resp.Body.Close()
+
+	for h, want := range p.wantHeaders {
+		got := resp.Header.Get(h)
+		if want != got {
+			return prober.FailedWith(fmt.Errorf("want header %q=%q in response, got %q", h, want, got))
+		}
+	}
 
 	if resp.StatusCode != p.wantCode {
 		return prober.FailedWith(fmt.Errorf("bad HTTP response status; want %d, got %d", p.wantCode, resp.StatusCode))
