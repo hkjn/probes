@@ -26,6 +26,7 @@ type WebProber struct {
 	wantCode       int
 	wantInResponse string
 	wantHeaders    map[string]string
+	alertFn        prober.AlertFn
 }
 
 // Name sets the name for the prober.
@@ -56,6 +57,15 @@ func ResponseHeaders(headers map[string]string) func(*WebProber) {
 	}
 }
 
+// Alert sets a custom alerting function.
+//
+// If Alert is not called, the probes.SendAlertEmail function is called.
+func Alert(fn prober.AlertFn) func(*WebProber) {
+	return func(p *WebProber) {
+		p.alertFn = fn
+	}
+}
+
 // New returns a new instance of the web probe with specified options.
 func New(target, method string, code int, options ...func(*WebProber)) *prober.Probe {
 	return NewWithGeneric(target, method, code, []prober.Option{}, options...)
@@ -73,6 +83,7 @@ func NewWithGeneric(target, method string, code int, genericOpts []prober.Option
 		Method:      method,
 		wantCode:    code,
 		wantHeaders: make(map[string]string),
+		alertFn:     probes.SendAlertEmail,
 	}
 	for _, opt := range options {
 		opt(p)
@@ -118,7 +129,10 @@ func (p WebProber) Probe() prober.Result {
 	return prober.Passed()
 }
 
-// Alert sends an alert notification via email.
+// Alert calls the prober.AlertFn for the prober.
+//
+// If no prober.AlertFn was set with the Alert() option,
+// probes.SendAlertEmail is used by default.
 func (p *WebProber) Alert(name, desc string, badness int, records prober.Records) error {
-	return probes.SendAlertEmail(name, desc, badness, records)
+	return p.alertFn(name, desc, badness, records)
 }
