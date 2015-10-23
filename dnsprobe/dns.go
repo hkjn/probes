@@ -23,6 +23,16 @@ type DnsProber struct {
 	wantNS     nsRecords
 	wantCNAME  string
 	wantTXT    []string
+	alertFn    prober.AlertFn
+}
+
+// Alert sets a custom alerting function.
+//
+// If Alert is not called, the probes.SendAlertEmail function is called.
+func Alert(fn prober.AlertFn) func(*DnsProber) {
+	return func(p *DnsProber) {
+		p.alertFn = fn
+	}
 }
 
 // New returns a new instance of the DNS probe with specified options.
@@ -35,7 +45,10 @@ func New(target string, options ...func(*DnsProber)) *prober.Probe {
 // NewWithGeneric passes through specified prober.Options, after
 // applying the dnsprobe-specific options.
 func NewWithGeneric(target string, genericOpts []prober.Option, options ...func(*DnsProber)) *prober.Probe {
-	p := &DnsProber{Target: target}
+	p := &DnsProber{
+		Target:  target,
+		alertFn: probes.SendAlertEmail,
+	}
 	for _, opt := range options {
 		opt(p)
 	}
@@ -286,7 +299,10 @@ func (p *DnsProber) checkTXT() error {
 	return nil
 }
 
-// Alert sends an alert notification via email.
+// Alert calls the prober.AlertFn for the prober.
+//
+// If no prober.AlertFn was set with the Alert() option,
+// probes.SendAlertEmail is used by default.
 func (p *DnsProber) Alert(name, desc string, badness int, records prober.Records) error {
-	return probes.SendAlertEmail(name, desc, badness, records)
+	return p.alertFn(name, desc, badness, records)
 }
