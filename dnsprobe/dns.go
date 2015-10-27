@@ -52,6 +52,7 @@ func NewWithGeneric(target string, genericOpts []prober.Option, options ...func(
 	for _, opt := range options {
 		opt(p)
 	}
+
 	// Set a default name if none was specified.
 	if p.name == "" {
 		p.name = fmt.Sprintf("DnsProber_%s", target)
@@ -60,6 +61,9 @@ func NewWithGeneric(target string, genericOpts []prober.Option, options ...func(
 	if p.desc == "" {
 		p.desc = fmt.Sprintf("Probes DNS records of %s", target)
 	}
+	// TODO(hkjn): This currently doesn't let prober.Interval be
+	// overridden, because even if it's supplied in genericOpts we
+	// override it ourselves..
 	return prober.NewProbe(p, p.name, p.desc,
 		append(genericOpts, prober.Interval(time.Minute*5), prober.FailurePenalty(5))...)
 }
@@ -78,7 +82,7 @@ func Desc(desc string) func(*DnsProber) {
 	}
 }
 
-// MX applies the option that the prober wants specific MX records.
+// MX sets expected MX records.
 func MX(mx []*net.MX) func(*DnsProber) {
 	return func(p *DnsProber) {
 		wantMX := mxRecords(mx)
@@ -87,7 +91,7 @@ func MX(mx []*net.MX) func(*DnsProber) {
 	}
 }
 
-// A applies the option that the prober wants specific A records.
+// A sets expected A records.
 func A(a []string) func(*DnsProber) {
 	return func(p *DnsProber) {
 		sort.Strings(a)
@@ -95,7 +99,7 @@ func A(a []string) func(*DnsProber) {
 	}
 }
 
-// NS applies the option that the prober wants specific NS records.
+// NS sets expected NS records.
 func NS(ns []*net.NS) func(*DnsProber) {
 	return func(p *DnsProber) {
 		nsRec := nsRecords(ns)
@@ -104,7 +108,7 @@ func NS(ns []*net.NS) func(*DnsProber) {
 	}
 }
 
-// CNAME applies the option that the prober wants specific CNAME record.
+// CNAME sets expected 1 CNAME record.
 func CNAME(cname string) func(*DnsProber) {
 	return func(p *DnsProber) {
 		p.wantCNAME = cname
@@ -123,40 +127,60 @@ func TXT(txt []string) func(*DnsProber) {
 func (p *DnsProber) Probe() prober.Result {
 	if len(p.wantMX) > 0 {
 		glog.V(1).Infof("Checking %d MX records..\n", len(p.wantMX))
-		err := p.checkMX()
-		if err != nil {
+		if err := p.checkMX(); err != nil {
 			return prober.FailedWith(err)
 		}
 	}
 	if len(p.wantA) > 0 {
 		glog.V(1).Infof("Checking %d A records..\n", len(p.wantA))
-		err := p.checkA()
-		if err != nil {
+		if err := p.checkA(); err != nil {
 			return prober.FailedWith(err)
 		}
 	}
 	if len(p.wantNS) > 0 {
 		glog.V(1).Infof("Checking %d NS records..\n", len(p.wantNS))
-		err := p.checkNS()
-		if err != nil {
+		if err := p.checkNS(); err != nil {
 			return prober.FailedWith(err)
 		}
 	}
 	if p.wantCNAME != "" {
 		glog.V(1).Infof("Checking CNAME record..\n")
-		err := p.checkCNAME()
-		if err != nil {
+		if err := p.checkCNAME(); err != nil {
 			return prober.FailedWith(err)
 		}
 	}
 	if len(p.wantTXT) > 0 {
 		glog.V(1).Infof("Checking %d TXT records..\n", len(p.wantTXT))
-		err := p.checkTXT()
-		if err != nil {
+		if err := p.checkTXT(); err != nil {
 			return prober.FailedWith(err)
 		}
 	}
-	return prober.Passed()
+	return prober.PassedWith(p.String(), "")
+}
+
+// String returns the human-readable description of the prober.
+func (p DnsProber) String() string {
+	var parts []string
+	if len(p.wantMX) > 0 {
+		parts = append(parts, fmt.Sprintf("MX=%s", p.wantMX))
+	}
+	if len(p.wantA) > 0 {
+		parts = append(parts, fmt.Sprintf("A=%+v", p.wantA))
+	}
+	if len(p.wantNS) > 0 {
+		parts = append(parts, fmt.Sprintf("NS=%+v", p.wantNS))
+	}
+	if p.wantCNAME != "" {
+		parts = append(parts, fmt.Sprintf("CNAME=%s", p.wantCNAME))
+	}
+	if len(p.wantTXT) > 0 {
+		parts = append(parts, fmt.Sprintf("TXT=%+v", p.wantTXT))
+	}
+	s := fmt.Sprintf("%s: %s", p.name, p.desc)
+	if len(parts) > 0 {
+		s += fmt.Sprintf(" (checks %s)", strings.Join(parts, ", "))
+	}
+	return s
 }
 
 // mxRecords is a collection of MX records, implementing sort.Interface.
