@@ -1,5 +1,5 @@
 // Package webprobe implements a HTTP probe.
-package webprobe
+package webprobe // import "hkjn.me/probes/webprobe"
 
 import (
 	"fmt"
@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/hkjn/prober"
-	"github.com/hkjn/probes"
+	"hkjn.me/prober"
+	"hkjn.me/probes"
 )
 
 const (

@@ -1,5 +1,5 @@
 // Package dnsprobe implements a DNS probe.
-package dnsprobe
+package dnsprobe // import "hkjn.me/probes/dnsprobe"
 
 import (
 	"fmt"
@@ -10,8 +10,8 @@ import (
 
 	"github.com/golang/glog"
 
-	"github.com/hkjn/prober"
-	"github.com/hkjn/probes"
+	"hkjn.me/prober"
+	"hkjn.me/probes"
 )
 
 // DnsProber probes a target host's DNS records.
@@ -155,7 +155,7 @@ func (p *DnsProber) Probe() prober.Result {
 			return prober.FailedWith(err)
 		}
 	}
-	return prober.PassedWith(p.String(), "")
+	return prober.PassedWith(p.String(), p.Target)
 }
 
 // String returns the human-readable description of the prober.

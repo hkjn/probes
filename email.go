@@ -11,7 +11,7 @@
 // required:
 //   - Config.SendGrid: sendgrid credentials
 //   - Config.Alert.Recipient: who receives the emails
-package probes
+package probes // import "hkjn.me/probes"
 
 import (
 	"bytes"
@@ -19,8 +19,8 @@ import (
 	"html/template"
 
 	"github.com/golang/glog"
-	"github.com/hkjn/prober"
 	"github.com/sendgrid/sendgrid-go"
+	"hkjn.me/prober"
 )
 
 // Config is the email configuration.
