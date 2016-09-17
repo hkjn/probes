@@ -19,6 +19,7 @@ import (
 	"html/template"
 
 	"github.com/golang/glog"
+	// TODO: Switch to newest API; this breaks unless vendored.
 	"github.com/sendgrid/sendgrid-go"
 	"hkjn.me/prober"
 )
