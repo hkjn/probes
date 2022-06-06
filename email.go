@@ -17,10 +17,11 @@ import (
 	"bytes"
 	"fmt"
 	"html/template"
+	"log"
 
-	"github.com/golang/glog"
-	// TODO: Switch to newest API; this breaks unless vendored.
 	"github.com/sendgrid/sendgrid-go"
+	"github.com/sendgrid/sendgrid-go/helpers/mail"
+
 	"hkjn.me/prober"
 )
 
@@ -38,9 +39,7 @@ type EmailConfig struct {
 		Recipient string   // To: address
 		CCs       []string // CC: addresses
 	}
-	Sendgrid struct {
-		User, Password string // sendgrid credentials
-	}
+	SendgridToken string // sendgrid token
 }
 
 // EmailData describes the data available in EmailConfig.Template.
@@ -50,23 +49,20 @@ type EmailData struct {
 	Records    prober.Records
 }
 
-func getClient() (*sendgrid.SGClient, error) {
-	user := Config.Sendgrid.User
-	pw := Config.Sendgrid.Password
-	if user == "" {
-		return nil, fmt.Errorf("no sendgrid user specified - set Config.Sendgrid.User")
+// getClient returns the SendGrid client.
+func getClient() (*sendgrid.Client, error) {
+	token := Config.SendgridToken
+	if token == "" {
+		return nil, fmt.Errorf("no sendgrid token specified - set Config.SendgridToken")
 	}
-	if pw == "" {
-		return nil, fmt.Errorf("no sendgrid password specified - set Config.Sendgrid.Password")
-	}
-	return sendgrid.NewSendGridClient(user, pw), nil
+	return sendgrid.NewSendClient(token), nil
 }
 
 // SendAlertEmail sends an alert email using SendGrid.
 //
 // This is provided to simplify prober.Probe implementations for Alert().
 func SendAlertEmail(name, desc string, badness int, records prober.Records) error {
-	glog.V(1).Infof("sending alert email..\n")
+	log.Printf("sending alert email..\n")
 
 	var t *template.Template
 	var err error
@@ -92,30 +88,23 @@ func SendAlertEmail(name, desc string, badness int, records prober.Records) erro
 		return fmt.Errorf("failed to construct email from template: %v", err)
 	}
 
-	m := sendgrid.NewMail()
-	subject := fmt.Sprintf("%s failed (badness %d)", name, badness)
-	m.SetSubject(subject)
-	err = m.AddTo(Config.Alert.Recipient)
-	if err != nil {
-		return fmt.Errorf("failed to add recipients: %v", err)
-	}
-	err = m.AddCcs(Config.Alert.CCs)
-	if err != nil {
-		return fmt.Errorf("failed to add cc recipients: %v", err)
-	}
-	m.SetHTML(html.String())
-	err = m.SetFrom(Config.Alert.Sender)
-	if err != nil {
-		return fmt.Errorf("failed to add sender %q: %v", Config.Alert.Sender, err)
-	}
 	sgClient, err := getClient()
 	if err != nil {
 		return fmt.Errorf("failed to create mail client: %v", err)
 	}
-	err = sgClient.Send(m)
+
+	subject := fmt.Sprintf("%s failed (badness %d)", name, badness)
+	from := mail.NewEmail("Alert email sender", Config.Alert.Sender)
+	to := mail.NewEmail("Alert email recipient", Config.Alert.Recipient)
+	email := mail.NewSingleEmail(from, subject, to, html.String(), html.String())
+
+	resp, err := sgClient.Send(email)
 	if err != nil {
 		return fmt.Errorf("failed to send mail: %v", err)
 	}
-	glog.Infof("sent alert email to %s\n", Config.Alert.Recipient)
+	if !(resp.StatusCode >= 200 && resp.StatusCode <= 299) {
+		return fmt.Errorf("unexpected response from sendgrid, want status 200-299: %v", resp)
+	}
+	log.Printf("sent alert email to %s\n", Config.Alert.Recipient)
 	return nil
 }
