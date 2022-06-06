@@ -63,8 +63,14 @@ func NewWithGeneric(target string, genericOpts []prober.Option, options ...func(
 	// TODO(hkjn): This currently doesn't let prober.Interval be
 	// overridden, because even if it's supplied in genericOpts we
 	// override it ourselves..
-	return prober.NewProbe(p, p.name, p.desc,
-		append(genericOpts, prober.Interval(time.Minute*5), prober.FailurePenalty(5))...)
+	result := prober.NewProbe(
+		p,
+		p.name,
+		p.desc,
+		append(genericOpts, prober.Interval(time.Minute*5), prober.FailurePenalty(5))...
+	)
+	log.Printf("returning new DnsProber: %v\n", p)
+	return result
 }
 
 // Name sets specified name.
@@ -125,31 +131,31 @@ func TXT(txt []string) func(*DnsProber) {
 // Probe verifies that the target's DNS records are as expected.
 func (p *DnsProber) Probe() prober.Result {
 	if len(p.wantMX) > 0 {
-		log.Printf("Checking %d MX records..\n", len(p.wantMX))
+		log.Printf("[%s] Checking %d MX records..\n", p.name, len(p.wantMX))
 		if err := p.checkMX(); err != nil {
 			return prober.FailedWith(err)
 		}
 	}
 	if len(p.wantA) > 0 {
-		log.Printf("Checking %d A records..\n", len(p.wantA))
+		log.Printf("[%s] Checking %d A records..\n", p.name, len(p.wantA))
 		if err := p.checkA(); err != nil {
 			return prober.FailedWith(err)
 		}
 	}
 	if len(p.wantNS) > 0 {
-		log.Printf("Checking %d NS records..\n", len(p.wantNS))
+		log.Printf("[%s] Checking %d NS records..\n", p.name, len(p.wantNS))
 		if err := p.checkNS(); err != nil {
 			return prober.FailedWith(err)
 		}
 	}
 	if p.wantCNAME != "" {
-		log.Printf("Checking CNAME record..\n")
+		log.Printf("[%s] Checking CNAME record..\n", p.name)
 		if err := p.checkCNAME(); err != nil {
 			return prober.FailedWith(err)
 		}
 	}
 	if len(p.wantTXT) > 0 {
-		log.Printf("Checking %d TXT records..\n", len(p.wantTXT))
+		log.Printf("[%s] Checking %d TXT records..\n", p.name, len(p.wantTXT))
 		if err := p.checkTXT(); err != nil {
 			return prober.FailedWith(err)
 		}
