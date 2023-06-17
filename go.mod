@@ -10,6 +10,6 @@ require (
 require (
 	github.com/sendgrid/rest v2.6.9+incompatible // indirect
 	github.com/stretchr/testify v1.7.2 // indirect
-	golang.org/x/net v0.0.0-20220531201128-c960675eff93 // indirect
+	golang.org/x/net v0.11.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
